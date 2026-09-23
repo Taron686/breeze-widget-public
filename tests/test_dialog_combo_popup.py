@@ -47,3 +47,36 @@ def test_dialog_combo_popup_has_opaque_themed_background(qapp, qtbot, theme, com
         dialog.close()
         setTheme(old_theme, qapp)
         qapp.setStyleSheet(old_stylesheet)
+
+
+@pytest.mark.parametrize('combo_type', [ComboBox, EditableComboBox])
+@pytest.mark.parametrize('text,width', [('31', 58), ('2026', 75), ('September', 110)])
+def test_narrow_combo_popup_fits_complete_items(qapp, qtbot, combo_type, text, width):
+    old_theme = ThemeManager.instance().currentTheme
+    old_stylesheet = qapp.styleSheet()
+    combo = combo_type()
+    qtbot.addWidget(combo)
+    combo.addItems([text] * 20)
+    combo.setFixedWidth(width)
+    try:
+        setTheme(Theme.DARK, qapp)
+        combo.show()
+        combo.showPopup()
+        qapp.processEvents()
+        view = combo.view()
+        # The styled item hint includes the text, padding and margins. The
+        # viewport must accommodate it even when a scrollbar consumes space.
+        assert view.viewport().width() >= view.sizeHintForColumn(0)
+        combo.hidePopup()
+        combo.setItemText(1, 'A considerably longer dropdown entry')
+        combo.showPopup()
+        qapp.processEvents()
+        assert view.viewport().width() >= view.sizeHintForColumn(0)
+        qtbot.keyClick(view, Qt.Key_Down)
+        qtbot.keyClick(view, Qt.Key_Return)
+        assert combo.currentIndex() == 1
+    finally:
+        combo.hidePopup()
+        combo.close()
+        setTheme(old_theme, qapp)
+        qapp.setStyleSheet(old_stylesheet)

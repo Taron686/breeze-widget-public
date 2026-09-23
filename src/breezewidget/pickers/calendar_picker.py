@@ -1,11 +1,13 @@
 """CalendarPicker — push button that opens a calendar Flyout."""
 from __future__ import annotations
 
-from PySide6.QtCore import QDate, QLocale, Qt, Signal
-from PySide6.QtWidgets import QCalendarWidget, QPushButton, QWidget
+from PySide6.QtCore import QDate, QEvent, QLocale, Signal
+from PySide6.QtWidgets import QPushButton, QWidget
 
 from ..constants import PROP_CALENDAR_PICKER
-from ..flyout.flyout import Flyout, FlyoutPlacement
+from ..calendar_widget import CalendarWidget
+from ..flyout.flyout import Flyout
+from ._calendar_popup import _CalendarPopup
 
 
 class CalendarPicker(QPushButton):
@@ -30,7 +32,7 @@ class CalendarPicker(QPushButton):
         self._date = QDate.currentDate() if date is None else QDate(date)
         self._placeholder = "Pick a date"
         self._flyout: Flyout | None = None
-        self._calendar: QCalendarWidget | None = None
+        self._calendar: CalendarWidget | None = None
         self._refreshText()
         self.clicked.connect(self._openCalendar)
 
@@ -56,25 +58,31 @@ class CalendarPicker(QPushButton):
 
     def _refreshText(self) -> None:
         if self._date.isValid():
-            self.setText(QLocale().toString(self._date, QLocale.FormatType.ShortFormat))
+            self.setText(self.locale().toString(self._date, QLocale.FormatType.ShortFormat))
         else:
             self.setText(self._placeholder)
 
     def _openCalendar(self) -> None:
-        calendar = QCalendarWidget()
-        calendar.setSelectedDate(self._date if self._date.isValid() else QDate.currentDate())
-        calendar.setVerticalHeaderFormat(QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader)
-        calendar.setHorizontalHeaderFormat(
-            QCalendarWidget.HorizontalHeaderFormat.SingleLetterDayNames
+        if self._flyout is not None:
+            return
+        flyout = _CalendarPopup(self)
+        self._calendar = flyout.calendar
+        self._calendar.datum_angeklickt.connect(
+            lambda d: self._onCalendarPicked(QDate(d.year, d.month, d.day), flyout)
         )
-        calendar.setFirstDayOfWeek(Qt.DayOfWeek.Monday)
-        self._calendar = calendar
-
-        flyout = Flyout(content=calendar, target=self, parent=self.window())
-        flyout.setPlacement(FlyoutPlacement.BOTTOM)
-        calendar.clicked.connect(lambda d: self._onCalendarPicked(d, flyout))
+        flyout.closed.connect(self._calendarClosed)
         self._flyout = flyout
         flyout.exec()
+
+    def _calendarClosed(self) -> None:
+        self._flyout = None
+        self._calendar = None
+        self.setFocus()
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.LocaleChange and hasattr(self, "_date"):
+            self._refreshText()
 
     def _onCalendarPicked(self, date: QDate, flyout: Flyout) -> None:
         self.setDate(date)

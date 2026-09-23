@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from calendar import monthrange
+from datetime import datetime
 
 
 def month_cells(month: datetime) -> list[datetime | None]:
     first_day = datetime(month.year, month.month, 1)
-    days: list[datetime | None] = [None for _ in range(first_day.weekday())]
-
-    current = first_day
-    while current.month == month.month:
-        days.append(current)
-        current += timedelta(days=1)
-
-    while len(days) < 42:
-        days.append(None)
-    return days
+    start = first_day.toordinal() - first_day.weekday()
+    count = ((first_day.weekday() + monthrange(month.year, month.month)[1] + 6) // 7) * 7
+    # Complete Monday-first weeks, including selectable neighbouring dates.
+    # Only cells outside Python's supported date range remain empty.
+    days = [datetime.fromordinal(day) if 1 <= day <= datetime.max.toordinal() else None
+            for day in range(start, start + count)]
+    return days + [None] * (42 - count)
 
 
 def activity_for_day(

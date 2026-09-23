@@ -16,9 +16,19 @@ class ComboBox(QComboBox):
         self._popupStyled = False
 
     def showPopup(self) -> None:
+        view = self.view()
         if not self._popupStyled:
-            apply_breeze_popup_window(self.view().window())
+            apply_breeze_popup_window(view.window())
             self._popupStyled = True
+        view.ensurePolished()
+        margins = view.contentsMargins()
+        # Qt sizes the popup from the combo's width, which can be too narrow
+        # for styled items. Include their padding plus the view's frame and
+        # scrollbar, and recalculate after item/font/theme changes.
+        width = (view.sizeHintForColumn(self.modelColumn())
+                 + margins.left() + margins.right()
+                 + view.verticalScrollBar().sizeHint().width())
+        view.setMinimumWidth(min(width, self.screen().availableGeometry().width()))
         super().showPopup()
 
     def paintEvent(self, event) -> None:

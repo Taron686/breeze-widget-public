@@ -6,7 +6,7 @@ from datetime import date, datetime
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
-from breezewidget import BodyLabel, ThemeManager, getPalette, isDarkTheme
+from breezewidget import BodyLabel, CalendarPicker, FastCalendarPicker, ThemeManager, getPalette, isDarkTheme
 from breezewidget.calendar_widget import CalendarColors, CalendarWidget, HeaderMode, get_weekday_names
 
 from ._gallery import GalleryPage
@@ -17,6 +17,10 @@ class CalenderViewDemoPage(GalleryPage):
         super().__init__("Calender_view", "breezewidget.calendar_widget", "calender-view")
         self._preview = _CalendarPreview(self)
         self.addExample("CalendarWidget", self._preview)
+        for picker_type in (CalendarPicker, FastCalendarPicker):
+            picker = picker_type(parent=self)
+            picker.dateChanged.connect(lambda d: self._onDateSelected(d.toPython()))
+            self.addExample(picker_type.__name__, picker)
         self.setStatus("Kalender bereit")
         self._preview.dateSelected.connect(self._onDateSelected)
         self.finish()

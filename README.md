@@ -1,4 +1,4 @@
-<img width="600" alt="BreezeWidget — PySide6 UI Framework" src="https://raw.githubusercontent.com/Taron686/breeze-widget-public/main/docs/breezewidget.png" />
+<img width="400" alt="BreezeWidget — PySide6 UI Framework" src="https://raw.githubusercontent.com/Taron686/breeze-widget-public/main/docs/breezewidget-preview.png" />
 
 # BreezeWidget
 
