@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QLabel, QWidget
+from PySide6.QtWidgets import QWidget
 
 from breezewidget import (
     BodyLabel,
@@ -39,9 +39,9 @@ class StatusDemoPage(GalleryPage):
             InfoBadge.attention("!"),
             InfoBadge.warning("3"),
             InfoBadge.error("99+"),
-            QLabel("Dot"),
+            BodyLabel("Dot"),
             DotInfoBadge(),
-            QLabel("Icon"),
+            BodyLabel("Icon"),
             IconInfoBadge(BreezeIcon.CHECK, variant="success"),
             IconInfoBadge(BreezeIcon.WARNING, variant="warning"),
         )

@@ -1,18 +1,57 @@
 from __future__ import annotations
 
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QWidget
 
 from breezewidget import (
     PrimaryPushButton,
     PushButton,
+    DropDownPushButton,
+    SplitPushButton,
     Theme,
+    ThemeManager,
     TransparentToolButton,
     setTheme,
     setThemeColor,
+    getPalette,
 )
 from breezewidget.constants import PROP_ROLE, ROLE_TRANSPARENT
 from examples.widget_demo_pages.basic_input import WidgetDemoPage
+
+
+def test_gallery_button_menus_render_themed_background(qapp, qtbot):
+    old_theme = ThemeManager.instance().currentTheme
+    old_stylesheet = qapp.styleSheet()
+    page = WidgetDemoPage()
+    qtbot.addWidget(page)
+    page.resize(1000, 700)
+    page.show()
+    try:
+        for theme in (Theme.DARK, Theme.LIGHT):
+            setTheme(theme, qapp)
+            qapp.processEvents()
+            for button_type in (DropDownPushButton, SplitPushButton):
+                button = page.findChild(button_type)
+                menu = button.menu()
+                if isinstance(button, SplitPushButton):
+                    button.showMenu()
+                else:
+                    menu.popup(button.mapToGlobal(button.rect().bottomLeft()))
+                try:
+                    qtbot.waitUntil(menu.isVisible)
+                    image = menu.grab().toImage()
+                    row = menu.actionGeometry(menu.actions()[1])
+                    ratio = image.devicePixelRatio()
+                    pixel = image.pixelColor(int((menu.width() - 10) * ratio),
+                                             int(row.center().y() * ratio))
+                    assert pixel == QColor(getPalette().surface2)
+                    assert menu.palette().color(QPalette.WindowText) == QColor(getPalette().text1)
+                finally:
+                    menu.hide()
+    finally:
+        page.close()
+        setTheme(old_theme, qapp)
+        qapp.setStyleSheet(old_stylesheet)
 
 
 def test_gallery_transparent_containers_do_not_override_primary_buttons(qapp):

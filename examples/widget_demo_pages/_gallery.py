@@ -6,7 +6,6 @@ from PySide6.QtGui import QColor, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
-    QScrollArea,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -18,6 +17,7 @@ from breezewidget import (
     BreezeThemeSwitch,
     PushButton,
     StrongBodyLabel,
+    SmoothScrollArea,
     TransparentToolButton,
     ThemeManager,
     TitleLabel,
@@ -175,9 +175,9 @@ class GalleryPage(QWidget):
         panel_layout.setContentsMargins(1, 1, 1, 1)
         panel_layout.setSpacing(0)
 
-        scroll = QScrollArea(self._panel)
+        scroll = SmoothScrollArea(self._panel)
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         scroll.setAutoFillBackground(False)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QRect, Qt
-from PySide6.QtGui import QColor, QPainter
+from PySide6.QtGui import QColor, QPainter, QPalette
 from PySide6.QtWidgets import QComboBox, QStyle, QStyleOptionComboBox, QWidget
 
 from ..theme import getPalette
@@ -29,7 +29,21 @@ class ComboBox(QComboBox):
                  + margins.left() + margins.right()
                  + view.verticalScrollBar().sizeHint().width())
         view.setMinimumWidth(min(width, self.screen().availableGeometry().width()))
+        self.refreshTheme()
         super().showPopup()
+        # Qt can reset the native container palette while preparing the popup.
+        self.refreshTheme()
+
+    def refreshTheme(self) -> None:
+        if not self._popupStyled:
+            return
+        popup = self.view().window()
+        palette = popup.palette()
+        background = QColor(getPalette().surface2)
+        # Native menu margins and rounded list corners expose the container.
+        palette.setColor(QPalette.ColorRole.Window, background)
+        palette.setColor(QPalette.ColorRole.Base, background)
+        popup.setPalette(palette)
 
     def paintEvent(self, event) -> None:
         super().paintEvent(event)

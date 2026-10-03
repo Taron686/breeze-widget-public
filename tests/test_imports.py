@@ -57,11 +57,17 @@ EXPECTED_SYMBOLS = {
     "TabBar", "TabItem",
     "BreezeWindow", "BreezeTitleBar", "MSBreezeWindow", "SplitBreezeWindow",
     "ListView", "TableView", "TableWidget", "TableItemDelegate", "TreeView",
+    "RichTextSegment", "RICH_TEXT_ROLE", "RichTextEdit", "RichTextTableItemDelegate",
+    "RichTextBlock", "RICH_TEXT_BLOCKS_ROLE",
     "FlipView", "CycleListWidget", "Avatar",
     "MediaPlayer", "PlayBar", "VideoWidget",
 }
 
 EXPECTED_SUBMODULE_SYMBOLS = {
+    "breezewidget.rich_text": {
+        "RichTextSegment", "RICH_TEXT_ROLE", "RichTextEdit", "RichTextTableItemDelegate",
+    "RichTextBlock", "RICH_TEXT_BLOCKS_ROLE",
+    },
     "breezewidget.window": {
         "BreezeWindow",
         "BreezeTitleBar",
@@ -111,7 +117,7 @@ def test_all_contains_expected_symbols():
 
 
 def test_all_symbol_count_matches_contract():
-    assert len(breezewidget.__all__) == 134
+    assert len(breezewidget.__all__) == 140
 
 
 def test_all_symbols_are_importable():

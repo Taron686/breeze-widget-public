@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "breeze-widget"
-version = "0.5.0"
+version = "0.6.0"
 description = "Clean-room Breeze widget toolkit for PySide6 desktop applications"
 readme = "README.md"
 license = "MIT"

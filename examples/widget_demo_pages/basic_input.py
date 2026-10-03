@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QMenu, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QVBoxLayout, QWidget
 
 from breezewidget import (
     BodyLabel,
@@ -18,6 +18,7 @@ from breezewidget import (
     PrimaryPushButton,
     PushButton,
     RadioButton,
+    RoundMenu,
     SpinBox,
     SplitPushButton,
     SwitchButton,
@@ -63,7 +64,7 @@ class WidgetDemoPage(GalleryPage):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
 
-        dropdown_menu = QMenu(container)
+        dropdown_menu = RoundMenu(parent=container)
         for text in ("Export", "Archivieren", "Zuruecksetzen"):
             action = dropdown_menu.addAction(text)
             action.triggered.connect(lambda checked=False, value=text: self.setStatus(f"DropDown: {value}"))
@@ -71,7 +72,7 @@ class WidgetDemoPage(GalleryPage):
         dropdown = DropDownPushButton("Aktion waehlen", container, BreezeIcon.MORE, dropdown_menu)
         layout.addWidget(dropdown)
 
-        split_menu = QMenu(container)
+        split_menu = RoundMenu(parent=container)
         for text in ("Als Entwurf", "Mit Protokoll", "Zeitversetzt"):
             action = split_menu.addAction(text)
             action.triggered.connect(lambda checked=False, value=text: self.setStatus(f"Split-Menue: {value}"))

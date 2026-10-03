@@ -89,10 +89,13 @@ class DialogsDemoPage(GalleryPage):
         )
 
     def _openColorDialog(self):
+        original_color = QColor(self._color)
         dlg = ColorDialog(self._color, "Pick accent")
         dlg.colorChanged.connect(self._onColorPicked)
         if dlg.exec() == 1:
             self._color = dlg.color()
+        else:
+            self._color = original_color
         self._refreshSwatch()
 
     def _onColorPicked(self, color: QColor):

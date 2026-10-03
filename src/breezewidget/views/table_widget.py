@@ -54,9 +54,12 @@ class TableItemDelegate(QStyledItemDelegate):
                 opt.palette.setColor(QPalette.ColorRole.Text, QColor(palette.text1))
                 opt.palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(palette.text2))
             painter.setFont(opt.font)
-            style = opt.widget.style() if opt.widget is not None else QApplication.style()
-            style.drawControl(QStyle.ControlElement.CE_ItemViewItem, opt, painter, opt.widget)
+            self._draw_content(painter, opt, index)
         painter.restore()
+
+    def _draw_content(self, painter, option, index):
+        style = option.widget.style() if option.widget is not None else QApplication.style()
+        style.drawControl(QStyle.ControlElement.CE_ItemViewItem, option, painter, option.widget)
 
     def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index):
         editor = super().createEditor(parent, option, index)
@@ -95,6 +98,50 @@ class TableWidget(QTableWidget):
 
     def setBorderVisible(self, visible: bool) -> None:
         self.setFrameShape(QFrame.Shape.StyledPanel if visible else QFrame.Shape.NoFrame)
+
+    def _row_height_controller(self):
+        from ._auto_row_height import _AutoRowHeightController
+        if not hasattr(self, "_auto_row_height"):
+            self._auto_row_height = _AutoRowHeightController(self)
+        return self._auto_row_height
+
+    def setAutoRowHeightEnabled(self, enabled: bool) -> None:
+        """Opt into coalesced content sizing; disabling leaves current heights."""
+        self._row_height_controller().setEnabled(enabled)
+
+    def isAutoRowHeightEnabled(self) -> bool:
+        return hasattr(self, "_auto_row_height") and self._auto_row_height.enabled
+
+    def setMinimumRowHeight(self, row: int, height: int) -> None:
+        """Set a logical row's floor; it follows insertion/deletion of other rows."""
+        if not 0 <= row < self.rowCount():
+            raise IndexError("row out of range")
+        self._row_height_controller().setMinimum(row, max(0, int(height)))
+
+    def setItemDelegate(self, delegate) -> None:
+        super().setItemDelegate(delegate)
+        if hasattr(self, "_auto_row_height"):
+            self._auto_row_height.watchDelegate(delegate)
+
+    def setItemDelegateForRow(self, row, delegate) -> None:
+        super().setItemDelegateForRow(row, delegate)
+        if hasattr(self, "_auto_row_height"):
+            self._auto_row_height.watchDelegate(delegate)
+
+    def setItemDelegateForColumn(self, column, delegate) -> None:
+        super().setItemDelegateForColumn(column, delegate)
+        if hasattr(self, "_auto_row_height"):
+            self._auto_row_height.watchDelegate(delegate)
+
+    def setSpan(self, row, column, rowSpan, columnSpan) -> None:
+        super().setSpan(row, column, rowSpan, columnSpan)
+        if hasattr(self, "_auto_row_height"):
+            self._auto_row_height.schedule()
+
+    def clearSpans(self) -> None:
+        super().clearSpans()
+        if hasattr(self, "_auto_row_height"):
+            self._auto_row_height.schedule()
 
     def setBorderRadius(self, radius: int) -> None:
         self._borderRadius = max(0, int(radius))

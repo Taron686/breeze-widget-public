@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QGraphicsOpacityEffect, QHBoxLayout, QWidget
 
 from breezewidget import (
     BackgroundColorAnimation,
@@ -22,7 +22,7 @@ class AnimationsDemoPage(GalleryPage):
     def __init__(self):
         super().__init__("Animations", "breezewidget.animation", "animations")
 
-        # --- PropertyAnimation: animate windowOpacity on a panel ---------
+        # --- PropertyAnimation: fade a child panel via its graphics effect ---
         prop_panel = QFrame()
         prop_panel.setMinimumSize(220, 60)
         prop_panel.setStyleSheet(f"background: {getPalette().primary4}; border-radius: 8px;")
@@ -35,7 +35,11 @@ class AnimationsDemoPage(GalleryPage):
         prop_h.setContentsMargins(0, 0, 0, 0)
         prop_h.setSpacing(10)
         prop_btn = PushButton("Pulse")
-        self._prop_anim = PropertyAnimation(prop_panel, b"windowOpacity").from_(1.0).to(0.3).withDuration(400)
+        opacity = QGraphicsOpacityEffect(prop_panel)
+        opacity.setOpacity(1.0)
+        prop_panel.setGraphicsEffect(opacity)
+        self._prop_anim = PropertyAnimation(opacity, b"opacity").from_(1.0).to(1.0).withDuration(400)
+        self._prop_anim.setKeyValueAt(0.5, 0.3)
 
         def _pulse():
             self._prop_anim.stop()

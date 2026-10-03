@@ -39,6 +39,8 @@ from .views import (
 )
 from .media import MediaPlayer, PlayBar, VideoWidget
 from .scroll import PipsPager, SmoothScrollArea
+from .rich_text import RICH_TEXT_ROLE, RichTextSegment, RichTextEdit, RichTextTableItemDelegate
+from .rich_text import RICH_TEXT_BLOCKS_ROLE, RichTextBlock
 from .cards import (
     CardWidget,
     ComboBoxSettingCard,
@@ -267,6 +269,12 @@ __all__ = [
     "TableView",
     "TableWidget",
     "TableItemDelegate",
+    "RICH_TEXT_ROLE",
+    "RichTextSegment",
+    "RichTextBlock",
+    "RICH_TEXT_BLOCKS_ROLE",
+    "RichTextEdit",
+    "RichTextTableItemDelegate",
     "TreeView",
     "FlipView",
     "CycleListWidget",

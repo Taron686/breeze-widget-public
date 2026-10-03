@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QLabel, QWidget
+from PySide6.QtWidgets import QWidget
 
 from breezewidget import (
+    BodyLabel,
     BreezeIcon,
     MSBreezeWindow,
     PushButton,
@@ -62,7 +63,7 @@ class WindowsDemoPage(GalleryPage):
         win = MSBreezeWindow()
         win.setWindowTitle("MSBreezeWindow demo")
         for label, key in (("Home", "ms-home"), ("Library", "ms-lib"), ("Settings", "ms-set")):
-            page = QLabel(f"Page: {label}")
+            page = BodyLabel(f"Page: {label}")
             page.setAlignment(Qt.AlignmentFlag.AlignCenter)
             win.addSubInterface(page, label, routeKey=key)
         win.resize(720, 480)
@@ -77,7 +78,7 @@ class WindowsDemoPage(GalleryPage):
             ("Files", BreezeIcon.FOLDER, "split-files"),
             ("Settings", BreezeIcon.SETTINGS, "split-set"),
         ):
-            page = QLabel(f"Page: {label}")
+            page = BodyLabel(f"Page: {label}")
             page.setAlignment(Qt.AlignmentFlag.AlignCenter)
             win.addSubInterface(page, icon, label, routeKey=key)
         win.resize(900, 540)

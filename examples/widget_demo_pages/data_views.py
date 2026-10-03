@@ -1,10 +1,13 @@
 """Data views (6) — ListView, TableView, TreeView, FlipView, CycleListWidget, Avatar."""
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPixmap, QStandardItem, QStandardItemModel
-from PySide6.QtWidgets import QHBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QTableWidgetItem, QWidget
 
 from breezewidget import Avatar, CycleListWidget, FlipView, ListView, TableView, TreeView
+from breezewidget import TableWidget, RichTextTableItemDelegate, RichTextSegment, RICH_TEXT_ROLE
+from breezewidget import RichTextBlock, RICH_TEXT_BLOCKS_ROLE
 
 from ._gallery import GalleryPage
 
@@ -44,6 +47,41 @@ class ViewsDemoPage(GalleryPage):
         table.setModel(table_model)
         table.horizontalHeader().setStretchLastSection(True)
         self.addExample("TableView — header, no grid lines", table)
+
+        rich_table = TableWidget()
+        rich_table.setRowCount(4)
+        rich_table.setColumnCount(2)
+        rich_table.setHorizontalHeaderLabels(["Editable rich text", "Notes"])
+        rich_table.setColumnWidth(0, 150)
+        rich_table.horizontalHeader().setStretchLastSection(True)
+        rich_delegate = RichTextTableItemDelegate(rich_table)
+        rich_delegate.setChecklistsEnabled(True)
+        rich_table.setItemDelegate(rich_delegate)
+        for row, text in enumerate((
+            "Mathe Sport", "a" * 100,
+            "\n".join(f"Line {number}" for number in range(1, 7)), "Short row",
+        )):
+            item = QTableWidgetItem(text)
+            item.setTextAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+            rich_table.setItem(row, 0, item)
+            rich_table.setItem(row, 1, QTableWidgetItem("Select text → right-click → Text color"))
+            rich_table.setMinimumRowHeight(row, 36 if row == 3 else 72)
+        rich_table.item(0, 0).setData(RICH_TEXT_ROLE, (
+            RichTextSegment("Mathe", "#008000"), RichTextSegment(" "),
+            RichTextSegment("Sport", "#0000ff"),
+        ))
+        blocks = (
+            RichTextBlock((RichTextSegment("Copy worksheets", "#008000"),), True),
+            RichTextBlock((RichTextSegment("Preparation notes"),)),
+            RichTextBlock((RichTextSegment("Inform parents about the upcoming exam", "#0000ff"),), False),
+            RichTextBlock((RichTextSegment("a" * 100),), False),
+        )
+        rich_table.item(2, 0).setText("\n".join("".join(s.text for s in b.segments) for b in blocks))
+        rich_table.item(2, 0).setData(RICH_TEXT_BLOCKS_ROLE, blocks)
+        rich_table.item(2, 1).setText("Click task markers; right-click while editing to insert/remove/toggle")
+        rich_table.setAutoRowHeightEnabled(True)
+        rich_table.setMinimumHeight(360)
+        self.addExample("Rich text and checklists — resize columns, click tasks, edit colors", rich_table)
 
         # TreeView.
         tree = TreeView()

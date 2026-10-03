@@ -12,7 +12,7 @@ is internal and may move at any time.
 
 ## 1. Public symbols (`from breezewidget import …`)
 
-The 134 names below are re-exported from `breezewidget/__init__.py` and are
+The 140 names below are re-exported from `breezewidget/__init__.py` and are
 guaranteed to be importable from the package root. Importing the same name
 from a deeper module path is only part of the contract for the curated
 subsystem modules listed in section 1a.
@@ -43,6 +43,8 @@ subsystem modules listed in section 1a.
 ### Text inputs
 `LineEdit`, `SearchLineEdit`, `PasswordLineEdit`,
 `TextEdit`, `PlainTextEdit`,
+`RichTextEdit`, `RichTextSegment`, `RICH_TEXT_ROLE`, `RichTextTableItemDelegate`,
+`RichTextBlock`, `RICH_TEXT_BLOCKS_ROLE`,
 `ComboBox`, `EditableComboBox`,
 `SpinBox`, `DoubleSpinBox`,
 `DateEdit`, `TimeEdit`, `DateTimeEdit`,
@@ -102,6 +104,8 @@ lists are part of the public contract:
   `StyleSheetBase`, `StyleSheetManager`, `build_stylesheet`,
   `setCustomStyleSheet`, `OSThemeListener`
 - `breezewidget.icons`: `BreezeIcon`, `icon_from`, `IconRegistry`
+- `breezewidget.rich_text`: `RichTextSegment`, `RICH_TEXT_ROLE`,
+  `RichTextEdit`, `RichTextTableItemDelegate`, `RichTextBlock`, `RICH_TEXT_BLOCKS_ROLE`
 - `breezewidget.navigation`: `NavigationInterface`, `NavigationItemPosition`,
   `Pivot`, `PivotItem`, `SegmentedWidget`, `BreadcrumbBar`,
   `BreadcrumbItem`, `TabBar`, `TabItem`
@@ -219,6 +223,95 @@ rename of a value in a future release is a single-place change.
 - `TableWidget` is a Breeze-styled `QTableWidget` wrapper for item-based
   tables. It supports `setBorderVisible(bool)` and `setBorderRadius(int)`.
   `TableItemDelegate` is the matching default delegate hook.
+- `TableWidget.setAutoRowHeightEnabled(enabled)` opts into coalesced content
+  sizing; `isAutoRowHeightEnabled()` defaults to `False`. Sizing uses the
+  maximum delegate size hint across visible columns and reacts to model,
+  column width, delegate, font, style, theme and DPI changes.
+  Horizontal spans use their visible rendered width and ignore covered cells;
+  `setSpan` and `clearSpans` schedule coalesced sizing when enabled.
+  `setMinimumRowHeight(row, height)` sets a nonnegative pixel floor for an
+  existing row (invalid row raises `IndexError`). Floors follow row insertion
+  and removal; model reset clears them. Disabling retains current heights.
+- `RichTextSegment(text: str, color: str | None = None)` is immutable.
+  `color` is an explicit RGB `#rrggbb` (case normalized) or `None` for the
+  item's/theme's default foreground. Invalid text/color raises
+  `TypeError`/`ValueError`. Concatenated segment text is exactly the plain
+  DisplayRole/EditRole text. Paragraph boundaries are `\n`; U+2028 is a
+  soft break inside a paragraph. Automatic wrapping adds no characters.
+  NBSP, emoji, spaces and empty paragraphs are preserved. Segment boundaries
+  do not identify paragraphs; a future block model can split at `\n`.
+- `RICH_TEXT_ROLE` is `int(Qt.UserRole) + 1` (257), transporting
+  `tuple[RichTextSegment, ...]`. Missing, invalid or mismatched metadata
+  falls back to plain text. Segment loading also accepts a list. Adjacent
+  equal-color segments are merged on extraction and empty segments omitted.
+- `RichTextEdit(parent=None, *, cellMode=False)` adds the color submenu while
+  retaining standard edit actions. `setSegments(segments)` replaces content
+  and clears undo history; `segments()` returns normalized color segments;
+  `plainText()` preserves soft breaks/NBSP (unlike Qt's `toPlainText()`).
+  `applyTextColor(color)` colors only the selection in one undo step.
+  `setColorPresets([(label, color), ...])` replaces the eight labeled swatches;
+  `setColorMenuLabels(title, customColor)` overrides submenu/dialog labels.
+  Defaults use Qt translation. `isFormattingPopupOpen()` remains true through
+  nested menus and the ColorDialog transition. Cancel preserves text/colors.
+  Cell mode has minimum height 0 and plain-text external paste; standalone
+  RichTextEdit/TextEdit keep the 90-pixel minimum.
+- `RichTextTableItemDelegate(parent=None, *, richTextRole=RICH_TEXT_ROLE,
+  wrapMode=QTextOption.WrapAtWordBoundaryOrAnywhere)` is opt-in, with
+  `richTextRole()`/`wrapMode()` accessors. It shares document metrics with its
+  RichTextEdit editor, keeps Qt decoration/check hit geometry and Breeze
+  selection styling. Enter inserts a paragraph, Tab/Shift+Tab commit and move,
+  Escape cancels. A formatting popup never ends the editing session.
+  `modelUpdated(QModelIndex)` fires after a successful `model.setItemData`
+  update of DisplayRole, EditRole and the configured segment role. It is the
+  public persistence observation point: raw model `dataChanged`/item change
+  notifications may occur while a custom model updates individual roles.
+  A rejected update does not emit `modelUpdated`; custom models are
+  responsible for transactional validation/rollback in `setItemData`.
+  The emitted index follows the edited item through synchronous sorting;
+  updates that remove the item or reset the model do not emit it.
+- `RichTextBlock(segments: tuple[RichTextSegment, ...], checked: bool | None = None,
+  *, separatorColor: str | None = None)` is immutable. Only actual bool or None
+  are accepted; None is ordinary text. Segments contain one paragraph (no LF,
+  CR or U+2029); U+2028 remains a soft break. `separatorColor` is the normalized
+  RGB color of the following LF and is ignored on the last block.
+- `RICH_TEXT_BLOCKS_ROLE` is 258. It transports a tuple of RichTextBlock; loading
+  also accepts a list. With checklists enabled, valid blocks matching the plain
+  model text are authoritative over color segments. Missing, invalid or stale
+  blocks fall back to existing plain/color-role data without replacing text.
+- `RichTextEdit.setChecklistsEnabled(enabled)` / `isChecklistsEnabled()` control
+  checklist actions and mouse/Enter behavior; default False. `setBlocks(blocks)`
+  replaces content and clears undo history independently of activation;
+  `blocks()` extracts normalized paragraphs, states and separator colors.
+  `insertChecklist()` / `removeChecklist()` affect selected paragraphs (exclude
+  a selection ending at the next paragraph start); existing task states survive
+  insertion. `toggleChecklistItem()` toggles the current task. Each action is
+  one undo step and respects read-only/disabled state. Enter at a task end adds
+  an open task; at its start the existing task's state follows its text; in an
+  empty task Enter converts it to ordinary text. Soft breaks remain in one task.
+  Multiline plain-text paste/insertion follows the same rule: the existing task
+  state follows its text at the paragraph start, otherwise remains on the first
+  part; new task paragraphs start open, with the whole insertion in one undo step.
+  Standalone rich clipboard insertion preserves incoming HTML formatting while
+  following the same task-state rule. Selection replacement preserves the native
+  insertion foreground and character format.
+  Surviving prefix/suffix paragraphs keep their own task states when a selection
+  is replaced; fully removed tasks do not transfer completion to pasted text.
+  If surviving text joins into one paragraph, its prefix state takes precedence.
+  `setChecklistMenuLabels(insert, remove, toggle)` overrides Qt-translated labels.
+- `RichTextTableItemDelegate` additionally accepts `richTextBlocksRole=None`, with
+  a matching accessor. Omitted/None chooses 258, or 259 when the existing
+  `richTextRole` is 258. Explicitly configured roles must be distinct user roles.
+  `setChecklistsEnabled(enabled)` / `isChecklistsEnabled()` default to False.
+  `setChecklistMenuLabels(insert, remove, toggle)` configures new cell editors.
+  Enabled commits submit DisplayRole, EditRole, color segments and blocks in one
+  `setItemData`. Native markers can be clicked without opening an editor on
+  enabled editable items. `checklistItemToggled(index, block_index, checked)`
+  fires once after an accepted external toggle, following `modelUpdated`.
+  Both respect synchronous sorting/reset/removal; a reset/removal by a
+  modelUpdated subscriber suppresses the follow-on toggle signal. Local editor
+  toggles persist through regular commit and do not emit checklistItemToggled.
+  Native cell CheckStateRole indicators remain independent. Disabling the
+  delegate restores color-only behavior and leaves stored block metadata alone.
 - `PrimaryToolButton` sets `breezeRole="primary"`. `IconWidget` displays a
   `BreezeIcon`, registered icon string, path, or `QIcon`.
 - `FastCalendarPicker(parent=None, date=None)` is a parent-first wrapper
